@@ -1,0 +1,202 @@
+Android中的颜色矩阵是用来表示三原色和透明度的4×5的矩阵
+  [ a, b, c, d, e,
+    f, g, h, i, j,
+    k, l, m, n, o,
+    p, q, r, s, t ]
+
+颜色矩阵的功能划分如下:
+	a, b, c, d, e 表示三原色中的红色
+	f, g, h, i, j 表示三原色中的绿色
+	k, l, m, n, o 表示三原色中的蓝色
+	p, q, r, s, t 表示颜色的透明度
+
+第五列用于表示颜色的偏移量
+一个颜色则使用[R, G, B, A]的方式进行表示，所以矩阵与颜色的计算方式则为
+
+	[ a, b, c, d, e,         R.         a*R + b*G + c*B + d*A + e*1 
+      f, g, h, i, j,   *     G     = 	f*R + g*G + h*B + i*A + j*1 
+      k, l, m, n, o,		 B          k*R + l*G + m*B + n*A + o*1 
+      p, q, r, s, t ]        A          p*R + q*G + r*B + s*A + t*1 
+      						 1		
+
+图6 矩阵与颜色的计算方式
+所以通过颜色矩阵我们会对原有的颜色进行改变
+
+通过一个小的例子来实验一下:
+
+	ColorMatrix colorMatrix = new ColorMatrix(new float[]{
+	        0, 0, 0, 0, 0,
+	        0, 1, 0, 0, 0,
+	        0, 0, 0, 0, 0,
+	        0, 0, 0, 1, 0,
+	});
+
+	canvas.drawBitmap(bitmap, null, new Rect(0, 0, getWidth()/2, getWidth()/2 * bitmap.getHeight() / bitmap.getWidth()), mPaint);
+
+	canvas.translate(getWidth()/2, 0);
+
+	mPaint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+	canvas.drawBitmap(bitmap, null, new Rect(0, 0, getWidth()/2, getWidth()/2 * bitmap.getHeight() / bitmap.getWidth()), mPaint);
+
+可以看到这边我们设置的颜色矩阵是仅仅保留绿色通道的，所以通过计算得到新的颜色为[0,G,0,A]
+
+
+
+
+
+/**
+* 设置矩阵颜色的饱和度
+* 
+* sat 0表示灰度、1表示本身
+*/
+public void setSaturation(float sat) 
+
+ColorMatrix提供的setSaturation函数是对RGB的饱和度都进行调整
+其中：参数float sat：表示把当前色彩饱和度放大的倍数。
+		取值为0表示完全无色彩，即灰度图像（黑白图像）；
+		取值为1时，表示色彩不变动；
+		当取值大于1时，显示色彩过度饱和
+
+
+/**
+* rScale 表示红色的数值的缩放比例
+* gScale 表示绿色的数值的缩放比例
+* bScale 表示蓝色的数值的缩放比例
+* aScale 表示透明度的数值的缩放比例
+*/
+
+public void setScale(float rScale, float gScale, float bScale,float aScale)
+	
+
+/**
+* 用于色调的旋转运算 (左手法则)
+* axis=0 表示色调围绕红色进行旋转
+* axis=1 表示色调围绕绿色进行旋转
+* axis=2 表示色调围绕蓝色进行旋转
+*/
+
+public void setRotate(int axis, float degrees)			
+
+
+1. 亮度滤镜（Brightness滤镜）
+FRAGMENT_SHADER = "precision mediump float;" +
+                "varying highp vec2 v_texCoord;\n" +
+                " \n" +
+                " uniform sampler2D s_texture;\n" +
+                " \n" +
+                " void main()\n" +
+                " {\n" +
+                "     lowp vec4 textureColor = texture2D(s_texture, v_texCoord);\n" +
+                "     \n" +
+                "     gl_FragColor = vec4((textureColor.rgb + vec3(0.5f)), textureColor.w);\n" + // 亮度增加0.5
+                "     gl_FragColor = vec4((textureColor.rgb - vec3(0.5f)), textureColor.w);\n" + // 亮度减少0.5
+                " }";
+
+
+2.灰度效果滤镜
+	RGB转换为单色的[0 ~256]之间的灰度，最常用的转换公式如下：
+	Gray = 0.299 * red + 0.587 * green + 0.114 * blue;
+
+FRAGMENT_SHADER = "precision mediump float;" +
+                "varying highp vec2 v_texCoord;\n" +
+                " \n" +
+                " uniform sampler2D s_texture;\n" +
+                " \n" +
+                " void main()\n" +
+                " {\n" +
+                "     lowp vec4 textureColor = texture2D(s_texture, v_texCoord);\n" +
+                "     \n" +
+                "     float gray = textureColor.r * 0.299 + textureColor.g * 0.587 + textureColor.b * 0.114;\n" +
+                "     gl_FragColor = vec4(gray, gray, gray, textureColor.w);\n" +
+                " }";
+
+3.底片效果滤镜
+	底片效果其实是对图像的逆反处理
+	将对应的(R, G, B)像素替换成(255 - R, 255 - G, 255 - B)                
+
+FRAGMENT_SHADER = "precision mediump float;" +
+        "varying highp vec2 v_texCoord;\n" +
+        " \n" +
+        " uniform sampler2D s_texture;\n" +
+        " \n" +
+        " void main()\n" +
+        " {\n" +
+        "     lowp vec4 textureColor = texture2D(s_texture, v_texCoord);\n" +
+        "     \n" +
+        "     gl_FragColor = vec4((vec3(1.0f) - textureColor.rgb), textureColor.w);\n" +
+        " }";
+
+4.浮雕效果滤镜	
+	#extension GL_OES_EGL_image_external : require
+
+	varying highp vec2 v_texCoord;
+	uniform sampler2D s_texture;
+	const vec2 texSize = vec2(1920,1080);
+
+	void main() {
+
+	    vec2 tex = v_texCoord;
+	    vec2 upLeftUV = vec2(tex.x - 1.0/texSize.x, tex.y - 1.0/texSize.y);
+	    vec4 curColor = texture2D(s_texture,v_texCoord);
+	    vec4 upLeftColor = texture2D(s_texture,upLeftUV);
+	    vec4 delColor = curColor - upLeftColor;
+	    float h = 0.3*delColor.x + 0.59*delColor.y + 0.11*delColor.z;
+	    vec4 bkColor = vec4(0.5, 0.5, 0.5, 1.0);
+	     gl_FragColor = vec4(h,h,h,0.0) +bkColor;
+	}
+
+Color Lookup Tables(LUT) 颜色查找表
+	在GPUImage中使用的是二维的LUT图片，
+	它是一张512x512大小的图片。它由8x8个大正方形格子组成，每个大格子又是由64x64个小正方形组成。
+	因此，LUT图片的宽度：8*64=512，高度：8*64=512。
+	对于每个小正方形，它的宽度值即为R通道值，高度即为G通道值。
+	由于R通道的范围为0~255，因此，从宽度方面来看，每个小正方形的R通道的差为：256/64=4，R通道的集合为[0，4，8，12，16，...，255]，
+	同理从高度上看，每个小正方形的G通道的差为：256/64=4，G通道的集合为[0，4，8，12，16，...，255]，
+	由于RG通道值存放在每个64x64的大正方形中，那么B通道的值存放在哪里呢？答案就是在8x8=64个大正方形中，
+	不难看出每个RGB通道都是用64个点来存放，占用空间为：64x64x64=262144。不同于RG通道的是，B通道存放时使用了宽度和高度分别为8个大正方形。
+
+constant float SquareSize = 63.0 / 512.0;
+constant float stepSize = 0.0; //0.5 / 512.0;
+
+fragment float4
+samplingShader(RasterizerData input [[stage_in]], // stage_in表示这个数据来自光栅化。（光栅化是顶点处理之后的步骤，业务层无法修改）
+               texture2d<float> normalTexture [[ texture(LYFragmentTextureIndexNormal) ]], // texture表明是纹理数据，LYFragmentTextureIndexNormal是索引
+               texture2d<float> lookupTableTexture [[ texture(LYFragmentTextureIndexLookupTable) ]]) // texture表明
+{
+    constexpr sampler textureSampler (mag_filter::linear,
+                                      min_filter::linear); // sampler是采样器
+    float4 textureColor = normalTexture.sample(textureSampler, input.textureCoordinate); //正常的纹理颜色
+    
+    float blueColor = textureColor.b * 63.0; // 蓝色部分[0, 63] 共64种
+    
+    float2 quad1; // 第一个正方形的位置, 假如blueColor=22.5，则y=22/8=2，x=22-8*2=6，即是第2行，第6个正方形；（因为y是纵坐标）
+    quad1.y = floor(floor(blueColor) * 0.125);
+    quad1.x = floor(blueColor) - (quad1.y * 8.0);
+    
+    float2 quad2; // 第二个正方形的位置，同上。注意x、y坐标的计算，还有这里用int值也可以，但是为了效率使用float
+    quad2.y = floor(ceil(blueColor) * 0.125);
+    quad2.x = ceil(blueColor) - (quad2.y * 8.0);
+    
+    float2 texPos1; // 计算颜色(r,b,g)在第一个正方形中对应位置
+    /*
+     quad1是正方形的坐标，每个正方形占纹理大小的1/8，即是0.125，所以quad1.x * 0.125是算出正方形的左下角x坐标
+     stepSize这里设置为0，可以忽略；
+     SquareSize是63/512，一个正方形小格子在整个图片的纹理宽度
+     */
+    
+    texPos1.x = (quad1.x * 0.125) + stepSize + (SquareSize * textureColor.r);
+    texPos1.y = (quad1.y * 0.125) + stepSize + (SquareSize * textureColor.g);
+    
+    float2 texPos2; // 同上
+    texPos2.x = (quad2.x * 0.125) + stepSize + (SquareSize * textureColor.r);
+    texPos2.y = (quad2.y * 0.125) + stepSize + (SquareSize * textureColor.g);
+    
+    float4 newColor1 = lookupTableTexture.sample(textureSampler, texPos1); // 正方形1的颜色值
+    float4 newColor2 = lookupTableTexture.sample(textureSampler, texPos2); // 正方形2的颜色值
+    
+    float4 newColor = mix(newColor1, newColor2, fract(blueColor)); // 根据小数点的部分进行mix
+    return float4(newColor.rgb, textureColor.w); //不修改alpha值
+}
+
+
+1542361631 1542275382

@@ -1,0 +1,24 @@
+1, 使用 
+	// 获取sp
+	SharePreferences sp = context.getSharePreferences(String key, int mode)
+
+	// 读取对应的值
+	sp.getXXX(String key, XXX defaultValue)
+
+	// 存储对应的值	
+	Editor editor = sp.edit()
+	editor.putXXX(String key, XXX value)
+	editor.commit() / editor.apply()
+
+2，原理
+	存储位置: /data/data/packageName/share_pref/
+
+	getSharePreferences(String key, int mode) --> ContextImpl下
+	不同的key对应不同的key.xml 文件
+
+	ContextImpl	
+
+	
+
+
+

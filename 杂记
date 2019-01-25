@@ -1,0 +1,271 @@
+Android 知识脑图
+	https://mp.weixin.qq.com/s/xSiy71Z0Dr9FTjqd_sSYkw
+
+1，Android RecyclerView 回收机制
+
+2，LinearLayout center问题
+
+3, 角度 -- 弧度 转换 
+	1 角度 = Math.PI / 180
+	1 弧度 = 180 ／ Math.PI
+// 仿枚举
+
+定义：public static final int TYPE_NORMAL = 0;
+     public static final int TYPE_FRAG = 1;
+     public static final int TYPE_VOICE = 2;
+	 
+	 @Retention(RetentionPolicy.SOURCE)
+	 @IntDef({TYPE_NORMAL, TYPE_VOICE, TYPE_FRAG})
+	 public @interface TextType {
+	 }
+
+使用：1, @TextType int type；  // 定义变量
+	 2, public @TextType int getType() {   // 定义返回值
+
+	 }
+
+	 3, public void setType(@TextType int type) { // 定义形参
+
+	 }
+
+
+// android studio mac 去除多余的import快捷键 ： control + option + O
+   android studio mac 格式化代码：command + option + L
+
+// DialogFragment 
+
+// TextView 替换 ImageView + TextView
+	1，android：drawableLeft=“@drawable／xxx”
+	2，android：drawableTop=“@drawable／xxx”
+	3，android：drawableRight=“@drawable／xxx”
+	4，android：drawableBottom=“@drawable／xxx”
+
+	5,  Drawable drawable = getResources().getDrawable();
+		drawable.setBound(0, 0, width, height);
+		textView.setCompoundDrawables(Drawable left, Drawable top, Drawable right, Drawable bottom);
+
+// PopupWindow EditText 弹出软键盘
+	PopupWindow popup = new PopupWindow();
+	popup.setContentView(view);
+	popup.setFocusable(true);	// 设置可弹出键盘
+	shareDetialPopup.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE); // 键盘弹出方式
+	popup.show();
+
+	// 手动调用软键盘弹出
+	InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Service.INPUT_METHOD_SERVICE);
+    imm.toggleSoftInput(0, InputMethodManager.HIDE_NOT_ALWAYS);			
+
+// https://github.com/yongce/AndroidDevNotes/blob/master/notes/knowledge/0005-custom-lint.asc 自定义Android Lint规则ziding
+
+
+// 利用ViewTreeObserver.OnGlobalLayoutListener 解决软键盘消失（点击软键盘自带的消失按键）
+	android:windowSoftInputMode="stateVisible|adjustResize" // adjustResize，软键盘弹出后高度会变小
+
+	ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+        @Override
+        public void onGlobalLayout() {
+            Rect rect = new Rect();
+            rootView.getGlobalVisibleRect(rect);
+
+            if (rootBottom == Integer.MIN_VALUE) {
+                rootBottom = rect.bottom;
+                return ;
+            }
+
+            if (rect.bottom < rootBottom) {
+                rootBottom = rect.bottom;
+            } else if (rect.bottom > rootBottom) {
+                rootBottom = rect.bottom;
+                hideCommentEvLogic();
+            }
+        }
+    };
+    rootView.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener); // rootview是整个Activity的布局引用
+    onDestroy时，rootView.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+
+
+// Java中的getGenericSuperclass方法的基本用法
+
+	public class UserService extends BaseHibernateDao<User, Integer>{  
+	  
+	}
+
+	Type genericSuperclass = getClass().getGenericSuperclass();  
+    if(genericSuperclass instanceof ParameterizedType){  
+        //参数化类型  
+        ParameterizedType parameterizedType= (ParameterizedType) genericSuperclass;  
+        //返回表示此类型实际类型参数的 Type 对象的数组  
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();  
+        this.clazz = (Class<T>)actualTypeArguments[0];  
+    }
+    
+    this.clazz 是 User
+
+// RecyclerView 设置item间隔
+mRootView!!.multiImageView.addItemDecoration(object: RecyclerView.ItemDecoration() {
+            override fun getItemOffsets(outRect: Rect?, view: View?, parent: RecyclerView?, state: RecyclerView.State?) {
+                val position = parent!!.getChildAdapterPosition(view)
+                val itemCount = parent.adapter.itemCount
+
+                when (position) {
+                    0 -> {
+                        outRect?.left = MARGIN_LARGE
+                        outRect?.right = MARGIN_NORMAL
+                    }
+                    itemCount - 1 -> {
+                        outRect?.left = MARGIN_NORMAL
+                        outRect?.right = MARGIN_LARGE
+                    }
+                    else -> {
+                        outRect?.left = MARGIN_NORMAL
+                        outRect?.right = MARGIN_NORMAL
+                    }
+                }
+            }
+        })
+
+
+val lipsArray = FaceTriangulation.instance.getFaceLocalTriangulationFilter(faceParameter!!.pointLandMark137!!,
+                FaceTriangulation.instance.faceTriangulation137Entity!!.lip_with_chin!!,
+                false,FaceTriangulation.FACE_TRIANGULATION_137)
+
+
+
+val teethArray = FaceTriangulation.instance.getFaceLocalTriangulationFilter(faceParameter!!.pointLandMark137!!,
+                FaceTriangulation.instance.faceTriangulation137Entity!!.teeth!!,
+                false,FaceTriangulation.FACE_TRIANGULATION_137)
+
+
+	
+
+
+
+
+
+
+package com.immomo.camerax.media.filter.effect.rainbow
+
+import android.text.TextUtils
+import com.core.glcore.cv.MMCVInfo
+import com.immomo.camerax.foundation.preference.CommonPreference
+import com.immomo.camerax.foundation.util.FileUtils
+import com.immomo.camerax.foundation.util.MoliveKit
+import com.immomo.camerax.media.MediaConstants
+import com.immomo.camerax.media.filter.CXLookupFilter
+import com.immomo.camerax.media.filter.sticker.MaskStore
+import com.immomo.camerax.media.filter.sticker.StickerAdjustFilter
+import com.momo.mcamera.mask.NormalFilter
+import project.android.imageprocessing.filter.BasicFilter
+import project.android.imageprocessing.filter.GroupFilter
+import project.android.imageprocessing.input.GLTextureOutputRenderer
+import java.io.File
+
+class CXRainbowEffectFilter: GroupFilter() {
+    private var mCurrentFilter: BasicFilter? = null
+
+    private val mNormalFilter: NormalFilter by lazy { NormalFilter() }
+    private val mCXRainbowFilter: CXRainbowFilter by lazy { CXRainbowFilter() }
+    private val mCXLookupFilter: CXLookupFilter by lazy { CXLookupFilter() }
+
+    private val mStickerAdjustFilter: StickerAdjustFilter by lazy { StickerAdjustFilter(MoliveKit.getAppContext()) }
+    private var isInit = false
+
+    val mmcvInfo: MMCVInfo? = null
+    init {
+        addNormalFilter()
+    }
+
+    private fun addNormalFilter() {
+        mCurrentFilter = mNormalFilter
+        mNormalFilter.addTarget(this)
+        registerInitialFilter(mNormalFilter)
+        registerTerminalFilter(mNormalFilter)
+    }
+
+    private fun removeNormalFilter() {
+        mNormalFilter.removeTarget(this)
+        removeInitialFilter(mNormalFilter)
+        removeTerminalFilter(mNormalFilter)
+    }
+
+    private fun addRainbowFilter() {
+//        mCXRainbowFilter.addTarget(mCXLookupFilter)
+//        mCXLookupFilter.addTarget(this)
+//        registerInitialFilter(mCXRainbowFilter)
+//        registerTerminalFilter(mCXLookupFilter)
+
+        mCurrentFilter = mStickerAdjustFilter
+        mStickerAdjustFilter.addTarget(mCXLookupFilter)
+        mCXLookupFilter.addTarget(this)
+        registerInitialFilter(mStickerAdjustFilter)
+        registerTerminalFilter(mCXLookupFilter)
+    }
+
+    private fun initSources() {
+        val id = CommonPreference.getString(CommonPreference.LAST_EFFECT_ID, "")
+        val version = CommonPreference.getInt(CommonPreference.LAST_EFFECT_VERSION, -1)
+        if (TextUtils.isEmpty(id) || version < 0) {
+            return
+        }
+
+        val texture = "$id.png"
+//        val lookup = "film/lookup.png" // TODO
+        val lookup = "lookup.png" // TODO
+
+//        val rainbowPath = FileUtils.getFileDirectory(MoliveKit.getAppContext()).absolutePath + File.separator + MediaConstants.EFFECT_NAME + File.separator + id + File.separator + version + File.separator + texture
+//        val lookupPath = FileUtils.getFileDirectory(MoliveKit.getAppContext()).absolutePath + File.separator + MediaConstants.EFFECT_NAME + File.separator + id + File.separator + version + File.separator + lookup
+//        if (!FileUtils.exist(lookupPath)) {
+//            return
+//        }
+//
+//        if (!FileUtils.exist(rainbowPath) || !FileUtils.exist(lookupPath)) {
+//            return
+//        }
+
+        val path = FileUtils.getFileDirectory(MoliveKit.getAppContext()).absolutePath + File.separator + MediaConstants.EFFECT_NAME + File.separator + id + File.separator + version
+        if (!FileUtils.exist(path)) {
+            return
+        }
+
+        val staticPath = path + File.separator + "static"
+        if (!FileUtils.exist(staticPath)) {
+            return
+        }
+        val maskMode = MaskStore.getInstance().getMask(MoliveKit.getAppContext(), staticPath)
+//        val animationPath = path + File.separator + "animation"
+//        if (!FileUtils.exist(animationPath)) {
+//            return
+//        }
+//        val maskMode = MaskStore.getInstance().getMask(MoliveKit.getAppContext(), animationPath)
+        mStickerAdjustFilter.addMaskModel(maskMode)
+
+        val lookupPath = staticPath + File.separator + "lookup.png"
+//        val lookupPath = animationPath + File.separator + "lookup.png"
+        if (!FileUtils.exist(lookupPath)) {
+            return
+        }
+
+
+        removeNormalFilter()
+        addRainbowFilter()
+
+
+
+//        mCXRainbowFilter.setRainbowPath(rainbowPath)
+        mCXLookupFilter.setLookupPath(lookupPath)
+        mCXLookupFilter.setIntensity(1.0f)
+
+        isInit = true
+    }
+
+    fun setMMCVInfo(mmcvInfo: MMCVInfo?) {
+        mStickerAdjustFilter.setMMCVInfo(mmcvInfo)
+    }
+
+    override fun newTextureReady(texture: Int, source: GLTextureOutputRenderer?, newData: Boolean) {
+        if (!isInit) {
+            initSources()
+        }
+        super.newTextureReady(texture, source, newData)
+    }
+}	

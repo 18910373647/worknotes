@@ -1,0 +1,228 @@
+@OpenGL ES
+	OpenGL（全写Open Graphics Library）是指定义了一个跨编程语言、跨平台的编程接口规格的专业的图形程序接口。它用于三维图像（二维的亦可），是一个功能强大，调用方便的底层图形库。OpenGL ES (OpenGL for Embedded Systems) 是OpenGL三维图形API的子集，针对手机、PDA和游戏主机等嵌入式设备而设计。                                                   
+
+	OpenGL ES 1.0和1.1 	-这个API规范支持Android 1.0和更高版本。
+	OpenGL ES 2.0 		-这个API规范支持Android 2.2(API级别8)和更高。
+	OpenGL ES 3.0 		-这个API规范支持Android 4.3(API级别18)和更高。
+	OpenGL ES 3.1 		-这个API规范支持Android 5.0(API级别21)和更高。
+
+@OpenGL ES可以做什么？
+	1, 图片处理。比如图片色调转换、美颜等。
+	2, 摄像头预览效果处理。比如美颜相机、恶搞相机等。
+	3, 视频处理。摄像头预览效果处理可以，这个自然也不在话下了。
+	4, 3D游戏。比如神庙逃亡、都市赛车等。
+
+@OpenGL ES 2.0中基本概念
+	1, 着色器（Shader）
+		是在GPU上运行的小程序。从名称可以看出，可通过处理它们来处理顶点。此程序使用OpenGL ES 		   SL语言来编写。它是一个描述顶点或像素特性的简单程序。
+
+	2，顶点着色器（VertexShader）
+		对于发送给GPU的每一个顶点，都要执行一次顶点着色器。其功能是把每个顶点在虚拟空间中的三维坐标变换为可以在屏幕上显示的二维坐标，并带有用于z-buffer的深度信息。顶点着色器可以操作的属性有：位置、颜色、纹理坐标，但是不能创建新的顶点
+
+	3，片元着色器（FragmentShader）
+		片元着色器计算每个像素的颜色和其它属性。它通过应用光照值、凹凸贴图，阴影，镜面高光，半透明等处理来计算像素的颜色并输出。它也可改变像素的深度(z-buffering)或在多个渲染目标被激活的状态下输出多种颜色。
+
+	4，着色器语言（Shading Language）
+		是一种高级的图形编程语言，仅适合于GPU编程，其源自应用广泛的C语言。对于顶点着色器和片元着色器的开发都需要用到着色器语言进行开发。它是面向过程的而非面向对象。 		
+
+	5，坐标系
+		OpenGL ES采用的是右手坐标，选取屏幕中心为原点，从原点到屏幕边缘默认长度为1，也就是说默认情况下，从原点到（1,0,0）的距离和到（0,1,0）的距离在屏幕上展示的并不相同。即向右为X正轴方向，向左为X负轴方向，向上为Y轴正轴方向，向下为Y轴负轴方向，屏幕面垂直向上为Z轴正轴方向，垂直向下为Z轴负轴方向。	
+
+	6，投影
+		OpenGL ES 的世界是3D的，但是手机屏幕能够给我展示的终究是一个平面，只不过是在绘制的过程中利用色彩和线条让画面呈现出3D的效果。OpenGL ES将这种从3D到2D的转换过程利用投影的方式使计算相对使用者来说变得简单可设置。 
+		OpenGL ES中有两种投影方式：正交投影和透视投影。正交投影，物体不会随距离观测点的位置而大小发生变化。而透视投影，距离观测点越远，物体越小，距离观测点越近，物体越大。	
+
+	7，纹理映射
+		现实世界中的物体往往是绚丽多彩的，要模拟现实世界的绚丽多彩，绘制出更加真实、酷炫的3D物体，就需要用到纹理映射了。纹理映射是将2D的纹理映射到3D场景中的立体物体上。	
+
+@OpenGL ES 2.0过程及理解（渲染管线）
+	OpenGL ES 2.0渲染过程为：读取顶点数据 —— 执行顶点着色器 —— 组装图元 —— 光栅化图元 —— 执行片元着色器 —— 写入帧缓冲区 —— 显示到屏幕上。
+
+@绘制一个三角形
+	1，步骤
+		1）在AndroidManifest.xml文件中设置使用的OpenGL ES的版本
+			AndroidManifest.xml中加入： 
+
+			For OpenGL ES 2.0:
+			<!-- Tell the system this app requires OpenGL ES 2.0. -->
+			<uses-feature android:glEsVersion="0x00020000" android:required="true" />
+
+			For OpenGL ES 3.0:
+			<!-- Tell the system this app requires OpenGL ES 3.0. -->
+			<uses-feature android:glEsVersion="0x00030000" android:required="true" />
+
+			For OpenGL ES 3.1:
+			<!-- Tell the system this app requires OpenGL ES 3.1. -->
+			<uses-feature android:glEsVersion="0x00030001" android:required="true" />
+
+		2）创建GLSurfaceView，图形的具体渲染工作都是在Renderer中完成的
+		
+		3）实现GLSurfaceView的Renderer，在Renderer中完成三角形的绘制
+			GLSurfaceView.Renderer接口需要实现以下方法:
+
+				onSurfaceCreated():创建GLSurfaceView时回调。使用这个方法来执行操作,只需要发生一次,如设置OpenGL环境参数或初始化OpenGL图                    形对象。设置一些绘制时不常变化的参数，比如：背景色，是否打开z-buffer等。
+
+				onDrawFrame()：每绘制一帧的时回调。
+
+				onSurfaceChanged()：GLSurfaceView几何变化时回调，包括GLSurfaceView大小的变化或设备的屏幕变换。
+
+		    渲染模式 setRenderMode(...);
+				GLSurfaceView.RENDERMODE_WHEN_DIRTY 当renderer create 或者 requestRender()时 才绘制
+			    GLSurfaceView.RENDERMODE_WHEN_DIRTY 持续渲染
+
+	2，具体实现
+		1) 编写一个简单的顶点着色器和一个简单的片元着色器
+			顶点着色器 ：private final String vertexShaderCode =
+						    "attribute vec4 vPosition;" +
+						    "void main() {" +
+						    "  gl_Position = vPosition;" +
+						    "}";
+
+			片元着色器 ：private final String fragmentShaderCode =
+						    "precision mediump float;" +
+						    "uniform vec4 vColor;" +
+						    "void main() {" +
+						    "  gl_FragColor = vColor;" +
+						    "}";					    
+								
+			gl_Position和gl_FragColor都是Shader的内置变量，分别为定点位置和片元颜色。
+		
+		2) 确定绘制图形的形状和颜色
+			形状：float triangleCoords[] = {
+			         0.5f,  0.5f, 0.0f, // top
+			         -0.5f, -0.5f, 0.0f, // bottom left
+			         0.5f, -0.5f, 0.0f  // bottom right
+			 	 };	
+
+			颜色：float color[] = { 1.0f, 1.0f, 1.0f, 1.0f }; //白色 	 
+
+		3）在Render中实现三角形的绘制
+			1，在onSurfaceCreated方法中，我们来创建program对象，连接顶点和片元着色器，链接program对象。
+			    //将背景设置为灰色
+			    GLES20.glClearColor(0.5f,0.5f,0.5f,1.0f);  
+			    //申请底层空间
+			    ByteBuffer bb = ByteBuffer.allocateDirect(triangleCoords.length * 4);
+			    bb.order(ByteOrder.nativeOrder());
+
+			    //将坐标数据转换为FloatBuffer，用以传入给OpenGL ES程序
+			    vertexBuffer = bb.asFloatBuffer();
+			    vertexBuffer.put(triangleCoords);
+			    vertexBuffer.position(0);  
+
+			    int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode);
+			    int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
+
+			    //创建一个空的OpenGLES程序
+			    mProgram = GLES20.glCreateProgram();
+			    //将顶点着色器加入到程序
+			    GLES20.glAttachShader(mProgram, vertexShader);
+			    //将片元着色器加入到程序中
+			    GLES20.glAttachShader(mProgram, fragmentShader);
+			    //连接到着色器程序
+			    GLES20.glLinkProgram(mProgram);
+
+				// 创建Shader
+			    public int loadShader(int type, String shaderCode){
+
+				    // 创建一个vertex shader类型(GLES20.GL_VERTEX_SHADER)
+				    // 或fragment shader类型(GLES20.GL_FRAGMENT_SHADER)
+				    int shader = GLES20.glCreateShader(type);
+
+				    // 将源码添加到shader并编译之
+				    GLES20.glShaderSource(shader, shaderCode);
+				    GLES20.glCompileShader(shader);
+
+				    return shader;
+				}
+
+
+			2，在onSurfaceChanged中设置设置视图窗口：
+
+				GLES20.glViewport(0,0,width,height);
+
+			3，onDrawFrame中绘制
+			    //将程序加入到OpenGLES2.0环境
+			    GLES20.glUseProgram(mProgram);
+
+			    //获取顶点着色器的vPosition成员句柄
+			    mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
+
+			    //启用三角形顶点的句柄
+			    GLES20.glEnableVertexAttribArray(mPositionHandle);
+
+			    //准备三角形的坐标数据
+			    GLES20.glVertexAttribPointer(mPositionHandle, 
+			    								COORDS_PER_VERTEX,
+			            						GLES20.GL_FLOAT, 
+			            						false,
+			            						vertexStride, 
+			            						vertexBuffer);
+
+			    //获取片元着色器的vColor成员的句柄
+			    mColorHandle = GLES20.glGetUniformLocation(mProgram, "vColor");
+
+			    //设置绘制三角形的颜色
+			    GLES20.glUniform4fv(mColorHandle, 1, color, 0);
+
+			    //绘制三角形
+			    GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
+
+			    //禁止顶点数组的句柄
+			    GLES20.glDisableVertexAttribArray(mPositionHandle);	
+
+
+问题1：大概说下着色器是怎么工作的
+	对这个问题我就说了一下管线的处理流程。
+问题2：cpu和gpu之间的调度
+	GLSL运行在GPU，其通过接口实现和CPU之间的数据转换。
+	opengl程序涉及到两种类型的处理单元--CPU和GPU。
+	opengl主程序由CPU调度运行，图像处理部分通过GLSL交由GPU执行。
+	CPU与GPU之间的数据传递分三个步骤：
+		一，首先利用内置的OpenGL函数生成一个ID号码;
+		二，根据需要对该ID号码进行内存类型的绑定;
+		三，在经过上面两个步骤之后，GPU中用于接收系统内存中数据的“标识符”就准备好了，第三部对这部分内存进行初始化，初始化的内容来自于系统内存中，这一部分功能利用glBufferData函数完成。
+
+	数据提交到GPU专用的内存中之后，需要根据应用场景对这些数据进行适当的分配。比如，有的数据当做顶点，有的是作为颜色，有的用于控制光照等等
+	此外，由于GPU具有高并行结构(heighly parallel structure)，所以GPU在处理图形和复杂算法方面计算效率较高。
+	CPU大部分面积为控制器和寄存器，而GPU拥有更多的ALU(Arithmetric Logic Unit,逻辑运算单云)用于数据处理，而非数据的高速缓存和流控制。
+
+问题3：opengl的一些概念，如矩阵变换，矩阵变换的原理。怎么对顶点进行的变换，有多少个矩阵，分别是什么作用
+	这个问题感到有点模糊，我当时只说出了有3个矩阵，也就是投影矩阵、模型视图矩阵、纹理矩阵，投影矩阵作用是规划投影范围、模型视图矩阵作用是指定模型的位置、纹理矩阵作用这个没答出来。
+
+问题4：opengl缓冲区的概念如深度缓冲区，后面还问了一个模板缓冲区
+
+	我就回答了这两个缓冲区的工作原理。
+	[1] 帧缓冲(frame buffer)：帧缓冲是下面几种缓冲的合集。通过帧缓冲可以将你的场景渲染到一个不同的帧缓冲中，可以使我们能够在场景中创建镜子这样的效果，或者做出一些炫酷的特效，存放显示用的数据的。
+	[2] 颜色缓冲(color buffer)：存储所有片段的颜色：即视觉输出的效果。
+	[3] 深度缓冲(depth buffer)：根据缓冲的z值，确定哪些面片被遮挡。由GLFW自动生成。
+	[4] 模板缓冲(stencil buffer)：与深度测试类似，通过比较模板值和预设值，决定是否丢弃片段。
+	数据在opengl中处理顺序是： 顶点着色器 - 片段着色器 - 模板测试 - 深度测试
+
+问题5：mipmap是怎么回事
+	我的回答是根据图元的深度位置的不同，使用不同的纹理，当然不能只是这一句话
+
+	Mipmap是多级渐远纹理,也是目前应用最为广泛的纹理映射(map)技术之一。
+	简单来说，就是实现 “实物(图片)看起来近大远小，近处清晰远处模糊”的效果。
+	它简单来说就是一系列的纹理图像，后一个纹理图像是前一个的二分之一。
+	多级渐远纹理背后的理念很简单：距观察者的距离超过一定的阈值，OpenGL会使用不同的多级渐远纹理，即最适合物体的距离的那个。由于距离远，解析度不高也不会被用户注意到。同时，多级渐远纹理另一加分之处是它的性能非常好
+
+问题6：opengl中的常用矩阵，各有什么作用
+
+	model:主要针对模型的平移、旋转、缩放、错切等功能，将模型由局部空间转换到世界空间
+	view：视图矩阵。摄像机/观察者的位置等信息（设置鼠标移动、滚轮等效果）,将所有世界坐标转换为观察坐标。
+	projection:投影矩阵。裁剪坐标 转换到屏幕上
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

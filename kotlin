@@ -1,0 +1,432 @@
+Kotlin
+
+一、变量
+	1. 变量声明：
+		只读变量： val a: Int = 0
+		可变变量： var b: String = "Kotlin" 
+		在kotlin中，变量类型是写在变量名之后的，用英文冒号 : 隔开，类型声明不是必须的，如果后面的值是一个明显可识别的类型，就不必添加类型声明。 
+		例如，以上声明可直接这么写： 
+		val a = 0 
+		val b = "Kotlin"
+	2. 变量使用的一些特性
+		1) 空值安全检查 
+		var s: String？ = null 
+		当一个变量允许为空值时，必须显示地使用 ? 来进行声明，? 置于类型名之后，否则，在编写时该变量出现空值就会直接报错。 
+		例如： var s: String = null 这一语句会直接报错，不用等到编译时检查
+
+		此外，对于nullable values, 可以在调用的时候进行安全检查，例如，有一个User类，要获取类中的name属性
+
+		if(user != null)
+			name = user.getName()
+		else
+			name = null
+
+		在kotlin中：
+		var name: String? = user?.getName()// 当user不为空的时候执行getName()
+
+		当然，在kotlin中的数据类并不需要显式调用getter和setter方法，通常情况下都只需要直接使用属性名：var name: String? = user?.name
+
+		还可以进行链式调用： user?.name?.toUpperCase() // 当user和name都为null的时候表达式值为null
+
+		2) ?: 
+		var url = urlList.get(pos) ?: return null
+
+		当?:左边表达式不为空时，返回表达式的值，否则执行?:右边表达式的值 
+
+		也可以使用if… else…语句 val url = if(pos < urlList.size()) urlList.get(pos) else return null
+
+		3) 安全类型转换： 
+		var linearLayout = viewGroup as? LinearLayout 
+		正常情况下无法转换失败将抛出异常，进行类型安全检查之后不会抛出异常，而是返回了null，所以此时的接收变量也应当为nullable
+
+二、语句
+	1, if, else等条件判断语句与java相同
+
+ 	2, 没有switch语句，取而代之的是when语句：
+
+		when(obj){
+		    // 这里是lambda表达式
+		    0, 1 -> println("zero or one")      // 只有同种数据类型才能够这么写，应该是用泛型列表实现的
+		    1 -> println("one")
+		    "hello" -> println("hello")
+		    is String -> println(obj)
+		    !is Long -> println("not a long value")
+		    else -> println("other value")    // 相当于switch中的default，可以省略
+		}
+
+		可以看出，when语句可以可以接收多种数据类型，不像switch只能够接收int型（jdk 1.7以后支持字符串，但实际上是通过比较hashCode来实现的，实际上还是int) ，但也有不足之处，即不能够像switch那样顺序执行，遇到break才中断
+
+	3, 循环语句
+
+		for循环：java中的foreach,(跟python几乎一样）
+
+		for(news in newsList){}
+		for(idx in 1..array.lastIndex){}  // ..表示范围，即可以用数字，也可以使用英文字母，如：a..z
+		for(i in 1 until 100){}    // 左闭右开区间，这里即不包括100
+		for(i in 1..100 step 2){}    // step定义步长，这里为：1, 3, 5, ... , 99
+		for(i in 10 downTo 1){}    // downTo 很容易理解，作用相当于--，但也可以和step结合使用
+
+		while和do…while语句和java一样
+
+	4, 跳转语句
+
+		break 和 continue，首先可以像Java里的那么使用
+		kotlin里的break, continue和 return还可以使用label来跳转（怎么看着像go语句了） 
+
+		这里只举使用label的例子： 
+		loop@ for (i in 1..100) {    // 这里的loop是label名，可以自定义
+		    for (j in 1..100) {
+		        if (...)
+		            break@loop
+		    }
+		}
+
+		需要注意的是，使用label时，break, continue只能用在循环中，return不能用在循环中		
+
+三、函数
+	1, 定义 : 函数定义使用fun关键字
+
+		fun add(val x: Int, y: Int) : Int /* 这里是返回值类型 */{    
+			// 默认返回类型为Unit（不是null），没有什么实际意义，可以不用写
+			// 函数参数可以不用写val,但不能使用var
+		    return x + y
+		}
+
+		上述函数中只有一个表达式，可以简写为： fun add(x: Int, y: Int) : Int = x + y
+
+	2, lambda
+		lambda表达式的作用相当于一个函数，但可以大大地简化代码，特别是在android中设置各种listener的的时候。 
+
+		这里先用上面的例子来说明，上面的例子用lambda可以写成： 
+
+		val add: (Int, Int) -> Int = {x , y/*这里是参数*/ -> x + y} 
+
+		这尼玛不是忽悠人吗，代码明明增多了还说减少 
+		且慢，先看一下android中无比常用的setOnClickListener: 
+
+		使用java：
+		button.setOnClickListener(new OnClickListener(){
+		    @Override
+		    public void onClick(View v){
+		       ...
+		    }
+		})
+
+		再看看kotlin：
+		button.setOnClickListener{ v -> if(v.isEnable) v.isEnable = false }
+
+		怎么样，是不是简单了好多 
+		等等，不对啊，怎么setOnClickListener方法没有参数了，变成了{}，这是什么鬼 
+		那是因为在kotlin中， 
+		如果函数的最后一个参数是函数，那么这个参数可以直接写在圆括号外面（要用花括号）， 
+		如果只有一个函数参数，可以直接省略圆括号！
+
+		还有更简单的呢：
+
+		button.setOnClickListener{ if(v.isEnable) v.isEnable = false } 
+		// 再lambda中，如果只有一个参数，那么可以使用it来表示，而不用写参数声明
+
+各种单个函数当接口，如android中许多listener，runnable等都可以使用lambda表达式来简化
+
+	3, 默认参数值函数
+		即可以为某个参数设定默认值，如：
+
+		fun read(b: Array<Byte>, off: Int = 0, len: Int = b.size()) {}
+
+四、类和接口
+	1， 定义及初始化：使用class关键字定义
+
+		// 写在类名后的constructor()是主构造方法(primary constructor)
+		class User constructor(name: String){
+		    init {    //由于primary constructor中不能初始化（不能写表达式），一般初始化工作都写在init代码块中，init 是一个关键字
+		        logger.info("User initialized with name: ${name}")
+		    }
+		}   
+
+		// 构造方法没有参数可以省略constructor()，类没有具体实现可以省略{}
+		// 可以写成：class User
+
+		除了primary constructor 外，其余构造方法称为secondary constructors, 
+		上面都User类，用secondary constructor可以改写为：
+
+		class User{
+		    constructor(name: String){
+		        logger.info("User initialized with name: ${name}")
+		    }
+		}
+
+		// 如果一个类有primary constructor，那么所有的secondary constructor都应该实现(或者说委托, delegate)primary constructor.
+		class User constructor(name: String){
+		    var name: String = ""
+		    constructor(name: String, age: Int): this(name){
+		        // 这里的name和primary constructor的name不是同一个,跟成员变量name也不是同一个
+		    }
+		    // 也可以直接赋常量值,反正目的就是初始化
+		    constructor(age: Int, address: String): this("dongdong"){
+		    }
+		}
+
+	2, 类属性 
+		kotlin类属性默认都会自动生成get()和set(value)方法的，我们仅在需要指定条件时才重写。
+
+		class A {
+			var name: String
+				get() = "Tom"    // 注意：这里一旦写成定值，set方法将失效，因为每次调用name实际上都是调用其get()方法的
+				set(value){
+				      // 这里可以根据需要添加各种条件判断
+	     		}
+		}
+
+	3, 继承 
+		由于kotlin中所有类和方法默认都是final的，不能直接继承或重写，需要继承的类或类中要重写的方法都应当在定义时添加open关键字
+
+		open class Parent(name: String) {
+		      var name: String
+
+		      init {
+				this.name = name    // 如果没有初始化，就必须声明为abstract
+		              				// 也可以声明的时候进行初始化：var name = "dongdong"
+		      }
+
+		      fun showChildren(){}    // 没有加open关键字，默认为final方法，不能重写，但可以重载
+
+		      open fun showIdentity(){}    // 可以重写或重载
+		}
+
+
+		class Child(name: String): Parent(name) {
+		      override fun showIdentity(){}  // 使用override关键字，习惯上写成一行，不像java是使用注解分开写
+		}
+
+		注意这里使用父类名+() 来表示了primary constructor，同样也可以使用super关键字来实现，亲测两种实现方法可以互换，这里的super跟java的super相似：
+
+		class Child: Parent{
+		      constructor(name: String): super(name){}
+		}
+
+		kotlin中所有类都有一个共同的父类： Any（注意这不是java.lang.Object）, 这个类只有equals(), hashCode(), toString()方法。 
+		kotlin与java一样，只能单继承，但可以实现多个接口。
+
+	4, 抽象 
+		kotlin的抽象与java的抽象的规则基本一致：
+
+		使用abstract关键字
+		抽象方法必须声明在抽象类中
+		有抽象属性（即抽象变量，像上面说的那个name属性，这一点与java不同）
+		可以把非抽象父类的方法重新声明为抽象方法（倒是没试过java行不行）
+		非抽象子类必须实现抽象父类的所有抽象方法
+
+	5, 接口 
+		同样使用 interface 关键字 
+		很奇怪，kotlin的接口跟Java抽象类几乎一样，可以定义有方法体的方法！
+
+		接口可以多继承
+		接口中的属性不能初始化
+
+	6, Object 
+		对于object 关键字，刚开始接触可能不太好理解，其实就是类似于java的匿名内部类，
+		因为kotlin没有匿名内部类，不能这样创建实例：User("hello"){}，
+
+		主要用处有：
+			当需要对一个类进行轻微的改动时，避免重新创建子类而使用实现单例。 
+
+			首先最基本用法：(这里使用listener举例，但实际的listener并不用这么写） 
+			这时叫companion expression， 是即时加载的
+
+			button.setOnClickListener(object: OnClickListener {
+			    override fun onClick(v: View?){}
+			})
+
+		object关键字的声明也可以进行继承：
+
+		    interface A{}    
+		    object: Base("name"), A{}    
+
+		单例实现（这个时候叫companion declarations, 是惰性加载的）： 
+
+			kotlin单例实现很简单，只需要使用object 关键字后面加一个单例的名称即可：
+
+			object DefaultListener : MouseAdapter() {
+			     override fun mouseClicked(e: MouseEvent) {
+			     // ...
+			}
+			     override fun mouseEntered(e: MouseEvent) {
+			     // ...
+			     }
+			}
+
+		companion object 
+
+			companion关键字仅有这个用法，
+			companion object只能在类中使用，相当于java中的静态内部类（kotlin没有static关键字），这里摘取kotlin文档的例子： 
+
+				class MyClass {
+				    companion object Factory {
+				        fun create(): MyClass = MyClass()
+				    }
+				}
+
+			// 使用
+			var instance = MyClass.create()
+
+			// 也可以使用下面的方法来调用
+			// 由于Factory定义后不可修改，故使用val变量来存放
+			val factory = MyClass.Factory
+			var instance = factory.create()
+
+			companion object后的名字可以省略（反正暂时我还是觉得没什么卵用, 直接通过类名使用即可了），省略后会有一个默认的名字Companion 
+			companion object是在类加载的时候初始化的
+
+	7, sealed class 
+
+		说白了，就是一个内部元素为类的枚举，并且内部的类都是本身的子类。sealed class 只能有一个实例，但是其子类跟普通的类一样，可以有多个实例，也可以在任何地方被继承。 
+		sealed class 的直接子类必须放在sealed class内，但sealed class内部可以有任意类(但一般只放置其子类）。
+
+		sealed class Expr {
+		    class Const(val number: Double) : Expr()
+		    class Sum(val e1: Expr, val e2: Expr) : Expr()
+		    object NotANumber : Expr()
+		    // 也可以：
+		    class Sub{}
+		}
+
+		sealed class有什么用呢，可以发现，sealed class 和 when 更配哦：
+
+		fun eval(expr: Expr): Double = when(expr) {
+		    is Expr.Const -> expr.number
+		    is Expr.Sum -> eval(expr.e1) + eval(expr.e2)
+		    Expr.NotANumber -> Double.NaN
+		        // the `else` clause is not required 
+		        //because we've covered all the cases
+		}
+
+	8, data class 
+		kotlin中有专门的数据类来代替java中的JavaBean，再也不用写JavaBean的getter和setter了
+
+		data class News(title: String, time: String)
+
+		简单粗暴，连{}都省了，而且编译器还会自动生成该类的equals(), hashCode(), copy(), toString() 方法。
+
+五，委托属性（Delegated Properties）
+	有一些很常见的属性，虽然我们可以在每次需要它们的时候手动地实现它们,但更好的方法还是一次性全部实现，然后放进一个库里面，这些属性包含： 
+		- 懒惰属性，在它第一次被使用的时候才初始化 
+		- 被观察的属性，当这个属性更改的时候就会通知监听器 
+		- map中的存储属性，而不是每个属性的单独字段
+
+	为了覆盖这些情况，Kotlin提供了委托属性
+		class Example {
+		    var p: String by Delegate() // 表达式在by后面就是委托
+		}
+
+	这个语法是：val/var <property name>: <Type> by <expression>
+		var/val：属性类型(可变/只读)
+		name：属性名称
+		Type：属性的数据类型
+		expression：代理类
+
+	因为get(set也是)与对应的属性委托给getValue()和setValue()方法。
+	属性委托并没有要求所有接口都必须实现，但它们还是需要提供getValue()函数(对于var属性还是需要setValue()函数).
+	看个例子：	
+		class Delegate {
+	          operator fun getValue(thisRef: Any?, property: KProperty<*>): String {
+	                return "$thisRef, thank you for delegating '${property.name}' to me!"
+	          }
+
+	          operator fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
+	                println("$value has been assigned to '${property.name} in $thisRef.'")
+	          }
+	    }
+
+	当我们从p中读取委托(Delegate)的授权实例时就将会调用Delegate,因此它的第一个参数就是我们从p读取的对象，并且第二个参数是描述p本身的属性，比如p的名称，
+	看个例子：	    
+		val e=Example();
+		println(e.p)
+		以上代码会打印：Example@33a17727, thank you for delegating ‘p’ to me!
+
+		再简单点来说，当我们绑定p时，setValue函数就会调用，前面两个参数是相同的，第三获得的值才会被赋值:		
+			e.p="NEW"
+		那么打印则改为：NEW has been assigned to ‘p’ in Example@33a17727.
+
+	1，标准委托
+		在Kotlin标准库中提供了很多工厂方法来使用委托
+
+		1）懒惰（lazy）
+			lazy()是一个使用lambda语法的函数，它的实例可以直接实现懒惰属性的委托，
+			第一次调用get()的时候就会使用lambda，然后记住结果，当再次调用get的时候直接返回记住的结果	
+
+			val lazyValue: String by lazy {
+			    println("computed!")
+			    "Hello"
+			}
+
+			fun main(args: Array<String>) {
+			    println(lazyValue)
+			    println(lazyValue)
+			}
+
+			这个例子即将打印:
+			computed!
+			Hello
+			Hello
+
+			var类型属性不能设置为延迟加载属性，因为在lazy中并没有setValue(…)方法
+
+			lazy操作符是线程安全的。如果在不考虑多线程问题或者想提高更多的性能，也可以使 
+				用 lazy(LazyThreadSafeMode.NONE){ … } 。
+
+			在LazyThreadSafetyMode中声明了几种，[Lazy]实例在多个线程之间同步访问的形式：
+				SYNCHRONIZED：锁定，用于确保只有一个线程可以初始化[Lazy]实例。
+
+				PUBLICATION：初始化函数可以在并发访问未初始化的[Lazy]实例值时调用几次，，但只有第一个返回的值将被用作[Lazy]实例的值。
+				
+				NONE：没有锁用于同步对[Lazy]实例值的访问; 如果从多个线程访问实例，是线程不安全的。此模式应仅在高性能至关重要，并且[Lazy]实例被保证永远不会从多个线程初始化时使用。
+		2）观察者
+			Delegates.observable()需要有两个参数：初始值和状态改变的处理器，我们每次赋值给属性的时候都会调用处理器(在赋值之后发生)，它有三个参数，即将被赋值的属性，旧值，新值
+
+			import kotlin.properties.Delegates
+
+			class User {
+			    var name: String by Delegates.observable("<no name>") {
+			        prop, old, new ->
+			        println("$old -> $new")
+			    }
+			}
+
+			fun main(args: Array<String>) {
+			    val user = User()
+			    user.name = "first"
+			    user.name = "second"
+			}
+
+			这个例子会打印：
+			<no name> -> first
+			first -> second	
+
+		3）保存属性到Map
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,16 @@
+有序:每一个元素都对应一个唯一的序列号，并且从第一个元素对应序列号0，第二个元素对应序列号1...
+									有序(fifo) 				允许数据重复					排序
+
+List		ArrayList				 是						是							否
+			LinkedList				 是						是							否
+
+Set			AbstractSet				 否						否							否
+			HashSet					 否						否							否
+			TreeSet					 否						否							是
+
+Map			AbstractMap				 否						key唯一，value可以重复			
+			HashMap					 否						key唯一，value可以重复	
+			TreeMap					 是						key唯一，value可以重复	
+
+// TreeSet如果bean未使用默认构造，需要实现comparable自己实现排序
+

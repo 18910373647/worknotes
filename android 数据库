@@ -1,0 +1,204 @@
+1，创建数据库
+	private class MySQLiteHelper : SQLiteOpenHelper {
+        companion object {
+            private val DB_NAME = "camerax"
+            private val DB_VERSION = 1
+        }
+
+        private var fields: Array<Field>? = null
+
+        // 创建数据库 super(context, DB_NAME, null, DB_VERSION)
+        constructor(context: Context) : super(context, DB_NAME, null, DB_VERSION)
+
+        override fun onCreate(db: SQLiteDatabase?) {
+            createTable(db)
+        }
+
+        private fun createTable(db: SQLiteDatabase?) {
+            // 创建用户信息表
+            createTable(db, UserBean::class.java)
+            // 创建拍照配置信息表
+            createTable(db, FaceConfigBean::class.java)
+        }
+
+
+        private fun createTable(db: SQLiteDatabase?, clazz: Class<*>, tableName : String? = null) {
+            var columnBuilder = StringBuilder()
+            var dbTableName = ""
+            var autoIdString = ""
+
+            // 根据反射，获取表名	
+            if (TextUtils.isEmpty(tableName)) {
+                var annotationTable = clazz.getAnnotation(DBTable::class.java)
+                if (annotationTable == null) {
+                    dbTableName = clazz.simpleName
+                } else if (TextUtils.isEmpty(annotationTable.tableName)) {
+                    dbTableName = clazz.simpleName
+                } else {
+                    dbTableName = annotationTable.tableName
+                }
+            }
+
+            // 构建建表语句	
+            fields = clazz.declaredFields
+            for (field in fields as Array<out Field>) {
+                var dbColumn: DBColumn = field.getAnnotation(DBColumn::class.java) ?: continue
+
+                var column = arrayOf(
+                        if ("auto" == dbColumn.name) field.name else dbColumn.name,
+                        dbColumn.type.getValue(),
+                        if (dbColumn.primary) "PRIMARY KEY" else "",
+                        if (dbColumn.notNull) "not null" else "")
+
+                columnBuilder.append(join(column, " "))
+                columnBuilder.append(",\n")
+            }
+
+            columnBuilder.append("json text")
+
+            if (!columnBuilder.toString().contains("PRIMARY KEY")) {
+                autoIdString = " _id INTEGER primary key autoincrement, "
+            }
+           
+            val tableCreateSql = String.format("create Table if not exists  %s (\n%s\n)", dbTableName, autoIdString + columnBuilder)
+           	
+           	// 创建数据库表 
+            db?.execSQL(tableCreateSql)
+        }
+
+        private fun join(elements: Array<String?>, separator: String) : String {
+            if (elements == null) {
+                return ""
+            }
+
+            var sb = StringBuilder()
+            for (element in elements) {
+                if (sb.isNotEmpty()) {
+                    if (separator != null) {
+                        sb.append(separator)
+                    }
+                }
+                sb.append(element)
+            }
+            return sb.toString()
+        }
+
+        override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+            upgradeTable(db, oldVersion, newVersion)
+        }
+
+        private fun upgradeTable(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+            createTable(db)
+        }
+    }
+
+2，相关方法 
+	SQLiteOpenHelper(Context context,String name,SQLiteDatabase.CursorFactory factory,int version) 构造方法，一般是传递一个要创建的数据库名称那么参数 
+
+	onCreate(SQLiteDatabase db) 创建数据库时调用 
+
+	onUpgrade(SQLiteDatabase db,int oldVersion , int newVersion) 版本更新时调用 
+
+	getReadableDatabase() 创建或打开一个只读数据库 
+
+	getWritableDatabase() 创建或打开一个读写数据库
+
+	delete(String table, String whereClause, String[] whereArgs) 删除数据行的便捷方法
+
+	insert(String table,String nullColumnHack,ContentValues values) 添加数据行的便捷方法
+
+	update(String table, ContentValues values, String whereClause, String[] whereArgs) 更新数据行的便捷方法
+
+	execSQL(String sql) 执行一个SQL语句
+
+	close() 关闭数据库
+
+	query(String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy, String limit) 查询指定的数据表，返回一个带游标的数据集
+
+	rawQuery(String sql, String[] selectionArgs) 运行一个预置的SQL语句，返回带游标的数据集	 
+
+3，相关操作
+	(1) 使用insert方法
+		ContentValues cv = new ContentValues();//实例化一个ContentValues用来装载待插入的数据
+		cv.put("username","Jack Johnson");//添加用户名   
+		cv.put("password","iLovePopMusic"); //添加密码   
+		db.insert("user",null,cv);//执行插入操作
+
+		String sql = "insert into user(username,password) values ('Jack Johnson','iLovePopMuisc')";//插入操作的SQL语句 
+		db.execSQL(sql);//执行SQL语句
+
+	（2）数据删除
+		String whereClause = "username=?";//删除的条件  
+		String[] whereArgs = {"Jack Johnson"};//删除的条件参数 
+		db.delete("user",whereClause,whereArgs);//执行删除
+
+		String sql = "delete from user where username='Jack Johnson'";//删除操作的SQL语句 
+		db.execSQL(sql);//执行删除操作 	
+
+	（3）数据修改
+		ContentValues cv = new ContentValues();//实例化ContentValues 
+		cv.put("password","iHatePopMusic");//添加要更改的字段及内容 
+		String whereClause = "username=?";//修改条件
+  		String[] whereArgs = {"Jack Johnson"};//修改条件的参数 
+  		db.update("user",cv,whereClause,whereArgs);//执行修改 	
+
+  		String sql = "update [user] set password = 'iHatePopMusic' where username='Jack Johnson'";//修改的SQL语句 
+  		db.execSQL(sql);//执行修改
+
+  	(4) 数据查询
+  		public Cursor query(String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy, String limit) 
+
+  			 table 表名
+			 colums：列名称数组
+  			 selection：条件子句，相当于where 
+  			 selectionArgs：条件语句的参数数组 
+  			 groupBy：分组 
+  			 having：分组条件 
+  			 orderBy：排序类 
+  			 limit：分页查询的限制  
+  			 Cursor：返回值，相当于结果集ResultSet 
+
+  			针对游标（Cursor）也提供了不少方法 
+
+  			 getCount() 总记录条数 
+  			 isFirst() 判断是否第一条记录
+ 			 isLast() 判断是否最后一条记录 
+ 			 moveToFirst() 移动到第一条记录
+ 			 moveToLast() 移动到最后一条记录 
+ 			 move(int offset) 移动到指定的记录 
+ 			 moveToNext() 移动到吓一条记录 
+ 			 moveToPrevious() 移动到上一条记录 
+ 			 getColumnIndex(String columnName) 获得指定列索引的int类型值 
+
+
+ 			实现代码  
+
+ 			Cursor c = db.query("user",null,null,null,null,null,null);//查询并获得游标   
+ 			if(c.moveToFirst()){ //判断游标是否为空     
+ 			  	for(int i=0; i<c.getCount(); i++) {           
+ 			  		c.move(i);//移动到指定记录           
+ 			  		String username = c.getString(c.getColumnIndex("username");           
+ 			  		String password =  c.getString(c.getColumnIndex("password"));       
+ 			  	}     
+ 			}  
+
+ 			Cursor c = db.rawQuery("select * from user where username=?",new Stirng[]{"Jack Johnson"});    
+ 			if(cursor.moveToFirst()) {        
+ 				String password = c.getString(c.getColumnIndex("password"));   
+ 			} 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

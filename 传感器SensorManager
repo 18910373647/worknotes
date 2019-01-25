@@ -1,0 +1,64 @@
+传感器
+	1，SensorManager
+		SensorManager senserManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+		SensorManager 是系统所有传感器的管理器，有了它的实例之后就可以调用getDefaultSensor()方法来得到任意的传感器类型了
+
+		我们需要对传感器输出的信号进行监听，这就要借助 SensorEventListener 来实现了。SensorEventListener 是一个接口，其中定义了 onSensorChanged()和onAccuracyChanged()这两个方法
+
+		SensorEventListener listener = new SensorEventListener() {  
+		  	@Override  
+		    public void onAccuracyChanged(Sensor sensor, int accuracy) {  
+
+		   	}  
+
+		 	@Override  
+		    public void onSensorChanged(SensorEvent event) {  
+
+		  	}  
+		}; 
+		当传感器的精度发生变化时就会调用 onAccuracyChanged()方法，
+		当传感器监测到的数值发生变化时就会调用 onSensorChanged()方法。
+		可以看到 onSensorChanged()方法中传入了一个 SensorEvent 参数，这个参数里又包含了一个 values 数组，所有传感器输出的信息都是存放在这里的.
+
+		我们还需要调用 SensorManager 的 registerListener() 方法来注册SensorEventListener 才能使其生效，
+		
+			senserManager.registerListener(listener, senser, SensorManager.SENSOR_DELAY_NORMAL);  
+			registerListener()方法接收三个参数:
+				第一个参数就是 SensorEventListener 的实例，
+				第二个参数是 Sensor 的实例（类型），这两个参数我们在前面都已经成功得到了。
+				第三个参数是用于表示传感器输出信息的更新速率SENSOR_DELAY_UI 、 SENSOR_DELAY_NORMAL 、 SENSOR_DELAY_GAME 和SENSOR_DELAY_FASTEST 这四种值可选，它们的更新速率是依次递增的
+
+		另外始终要记得， 当程序退出或传感器使用完毕时， 一定要调用 unregisterListener ()方法将使用的资源释放掉
+			sensorManager.unregisterListener(listener);		
+
+
+	2，传感器类型
+		Sensor sensor = senserManager.getDefaultSensor(Sensor.TYPE_LIGHT); 
+			// Sensor.TYPE_LIGHT -- 光照传感器 		
+			// values数组中第一个下标的值就是当前的光照强度 （values上边有说明）
+		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER); 
+			// Sensor.TYPE_ACCELEROMETER -- 加速传感器
+			// values 数组中会有三个值，分别代表手机在X轴、Y轴和Z轴方向上的加速度信息
+		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);  
+			// Sensor.TYPE_ORIENTATION -- 方向传感器
+			// values[0]记录着手机围绕 Z 轴的旋转角度，values[1] 记录着手机围绕 X 轴的旋转角度，values[2] 记录着手机围绕 Y 轴的旋转角度
+
+
+
+#--------- Guava start -----------#
+-dontwarn sun.misc.Unsafe
+-dontwarn com.google.common.collect.MinMaxPriorityQueue
+-dontwarn com.google.common.util.concurrent.FuturesGetChecked**
+-dontwarn javax.lang.model.element.Modifier
+-dontwarn afu.org.checkerframework.**
+-dontwarn org.checkerframework.**
+#--------- Guava start -----------#
+
+
+
+
+
+
+
+
+
