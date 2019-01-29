@@ -1,0 +1,98 @@
+／**
+  * EventBus用例
+  *／
+class EventBusActivity extends Activity {
+	private Button mSendButton;
+
+	public void onCreate(saveInstance: Bundle) {
+		super.onCreate(saveInstance);
+		setContentView(R.layout.event_bus_activity_layout);
+		mSendButton = findViewById(R.id.send_button);
+		mSendButton.setOnClickListener {
+			EventBus.getDefault().post(new MessageEvent("diy message"));
+		}
+		EventBus.getDefault().register(this)
+	}	
+
+	@Subsciber(threadMode = ThreadMode.MAIN)
+	public void onMainEvent(MessageEvent event) {
+		// 执行在UI线程中
+	}
+
+	@Subscriber(threadMode = ThreadMode.POSTING)
+	public void onPostingEvent(MessageEvent event) {
+		// 执行在当前线程（当前线程在UI线程中，执行在UI线程中，当前线程在工作线程，执行在工作线程）
+	}
+
+	@Subscriber(threadMode = ThreadMode.BACKGROUND)
+	public void onBackgroundEvent(MessageEvent event) {
+		// 如果当前线程在工作线程中，执行在工作线程中。如果当前线程在UI线程中，会创建工作线程并且执行在工作线程
+	}
+
+	@Subscriber(threadMode = ThreadMode.ASYNC)
+	public void onAsyncEvent(MessageEvent event) {
+		// 无论当前在哪个线程，都会重新创建工作线程，并且工作在工作线程中
+	}
+
+	public void onDestroy() {
+		super.onDestroy()
+		EventBus.getDefault().unregister(this)
+	}
+}
+
+源码：
+1，EventBus.getDefault().register(this)
+	// 构建这两个集合	
+	Map<Object, List<Class<?>>> typesBySubscriber
+		Object 			--- 注册EventBus的类（用例中的EventBusActivity）
+		List<Class<?>> 	--- List<XXXEvent.class> (用例中MessageEvent)
+						--- size == EventBusActivity中 回调方法的个数（用例中@Subscriber的方法的个数）
+
+	Map<Class<?>, CopyOnWriteArrayList<Subscription>> subscriptionsByEventType
+		Class<?>		--- EventBus中，自定义的Event（用例中的MessageEvent）
+		CopyOnWriteArrayList<Subscription>	
+				--- Subscription newSubscription = new Subscription(subscriber, subscriberMethod)									--- subscriber （用例中的EventBusActivity）		
+						--- subscriberMethod （用例中的@Subscriber的方法）
+
+				--- size === 用例中的@Subscriber的方法的个数
+
+2，EventBus.getDefault().post(new MessageEvent("diy message"))							
+	从subscriptionsByEventType获取到对应的Subscription
+
+	private void postToSubscription(Subscription subscription, Object event, boolean isMainThread) {
+        switch (subscription.subscriberMethod.threadMode) {
+            case POSTING:
+                invokeSubscriber(subscription, event); // 直接使用反射
+                break;
+            case MAIN:
+                if (isMainThread) {
+                    invokeSubscriber(subscription, event); // 直接使用反射 
+                } else {
+                    mainThreadPoster.enqueue(subscription, event); // 使用mainHandler发送的主线程，然后使用反射
+                }
+                break;
+            case MAIN_ORDERED:
+                if (mainThreadPoster != null) {
+                    mainThreadPoster.enqueue(subscription, event);
+                } else {
+                    // temporary: technically not correct as poster not decoupled from subscriber
+                    invokeSubscriber(subscription, event);
+                }
+                break;
+            case BACKGROUND:
+                if (isMainThread) { 
+                    backgroundPoster.enqueue(subscription, event); // 使用cacheThreadExcutor线程池，在新线程中使用反射
+                } else {
+                    invokeSubscriber(subscription, event); // 使用反射
+                }
+                break;
+            case ASYNC:
+                asyncPoster.enqueue(subscription, event); // 使用cacheThreadExcutor线程池，在新线程中使用反射
+                break;
+            default:
+                throw new IllegalStateException("Unknown thread mode: " + subscription.subscriberMethod.threadMode);
+        }
+    }
+
+3，EventBus.getDefault().unregister(this)
+	从 typesBySubscriber subscriptionsByEventType 移除当前注册的方法
